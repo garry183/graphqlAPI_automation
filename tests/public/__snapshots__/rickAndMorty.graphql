@@ -1,0 +1,93 @@
+directive @cacheControl(maxAge: Int, scope: CacheControlScope) on FIELD_DEFINITION | INTERFACE | OBJECT
+
+enum CacheControlScope {
+  PRIVATE
+  PUBLIC
+}
+
+type Character {
+  created: String
+  episode: [Episode]!
+  gender: String
+  id: ID
+  image: String
+  location: Location
+  name: String
+  origin: Location
+  species: String
+  status: String
+  type: String
+}
+
+type Characters {
+  info: Info
+  results: [Character]
+}
+
+type Episode {
+  air_date: String
+  characters: [Character]!
+  created: String
+  episode: String
+  id: ID
+  name: String
+}
+
+type Episodes {
+  info: Info
+  results: [Episode]
+}
+
+input FilterCharacter {
+  gender: String
+  name: String
+  species: String
+  status: String
+  type: String
+}
+
+input FilterEpisode {
+  episode: String
+  name: String
+}
+
+input FilterLocation {
+  dimension: String
+  name: String
+  type: String
+}
+
+type Info {
+  count: Int
+  next: Int
+  pages: Int
+  prev: Int
+}
+
+type Location {
+  created: String
+  dimension: String
+  id: ID
+  name: String
+  residents: [Character]!
+  type: String
+}
+
+type Locations {
+  info: Info
+  results: [Location]
+}
+
+type Query {
+  character(id: ID!): Character
+  characters(filter: FilterCharacter, page: Int): Characters
+  charactersByIds(ids: [ID!]!): [Character]
+  episode(id: ID!): Episode
+  episodes(filter: FilterEpisode, page: Int): Episodes
+  episodesByIds(ids: [ID!]!): [Episode]
+  location(id: ID!): Location
+  locations(filter: FilterLocation, page: Int): Locations
+  locationsByIds(ids: [ID!]!): [Location]
+}
+
+scalar Upload

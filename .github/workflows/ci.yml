@@ -1,0 +1,38 @@
+name: graphql-api-tests
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '30 2 * * *' # nightly: catches upstream schema drift with no code change
+  workflow_dispatch:
+
+jobs:
+  local:
+    # Deterministic: own server, no network dependency. This is the gate.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run test:local
+      - run: npm run selftest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: local-report, path: playwright-report, retention-days: 14 }
+
+  public:
+    # Third-party hobby APIs: informative, never blocking.
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npm run test:public
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: public-report, path: playwright-report, retention-days: 14 }
