@@ -1,4 +1,4 @@
-// Proves the security suite can fail: runs it against the server with every
+// Proves the security and authorization suites can fail: runs them against the server with every
 // control disabled and expects each control's test to go red. A gate that
 // stays green here is vacuous.
 import { spawnSync } from 'node:child_process';
@@ -12,10 +12,20 @@ const MUST_FAIL = [
   'introspection is disabled',
   '__type lookups are disabled too',
   'internal errors are masked',
+  'field suggestions do not leak schema names',
+  'input field suggestions do not leak through variables',
+  "another user's note is indistinguishable from a nonexistent one",
+  'node(id) does not bypass the ownership check',
+  "nested traversal only exposes the viewer's notes",
+  'aliases in one request are each checked',
+  "another user's note cannot be updated",
+  "another user's note cannot be deleted",
+  "another user's email is refused",
+  'email stays protected when reached through a fragment or node(id)',
 ];
 
 const report = 'test-results/selftest.json';
-spawnSync('npx', ['playwright', 'test', 'tests/local/security.spec.ts', '--project=local', '--reporter=json', '--retries=0'], {
+spawnSync('npx', ['playwright', 'test', 'tests/local/security.spec.ts', 'tests/local/authorization.spec.ts', '--project=local', '--reporter=json', '--retries=0'], {
   shell: true,
   stdio: ['ignore', 'pipe', 'inherit'],
   env: { ...process.env, GQL_UNSAFE: '1', LOCAL_GQL_PORT: '4010', CI: '1', PLAYWRIGHT_JSON_OUTPUT_NAME: report },

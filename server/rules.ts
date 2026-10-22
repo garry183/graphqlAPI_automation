@@ -1,4 +1,5 @@
 import { GraphQLError, Kind, type SelectionSetNode, type ValidationContext, type ValidationRule } from 'graphql';
+import type { Plugin } from 'graphql-yoga';
 
 function depthOf(set: SelectionSetNode | undefined, depth: number, ctx: ValidationContext, seen: ReadonlySet<string>): number {
   if (!set) return depth;
@@ -42,4 +43,28 @@ export const aliasLimit = (limit: number): ValidationRule => (ctx) => {
       },
     },
   };
+};
+
+const SUGGESTION = /\s*Did you mean [\s\S]*$/;
+const strip = <E extends Error>(errors: readonly E[]) =>
+  errors.map((e) =>
+    e instanceof GraphQLError && SUGGESTION.test(e.message)
+      ? new GraphQLError(e.message.replace(SUGGESTION, ''), { nodes: e.nodes, source: e.source, positions: e.positions, path: e.path, originalError: e.originalError, extensions: e.extensions })
+      : e,
+  );
+
+/**
+ * "Did you mean ...?" hints leak field and type names even with introspection
+ * off: an attacker can rebuild the schema by guessing. They come from two places,
+ * query validation and variable coercion (misspelled input fields), so both are stripped.
+ */
+export const noSuggestions: Plugin = {
+  onValidate: () => ({ result, setResult }) => {
+    if (result.length) setResult(strip(result));
+  },
+  onExecute: () => ({
+    onExecuteDone({ result, setResult }) {
+      if (!(Symbol.asyncIterator in result) && result.errors?.length) setResult({ ...result, errors: strip(result.errors) });
+    },
+  }),
 };

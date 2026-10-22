@@ -57,9 +57,15 @@ test.describe('schema exposure', () => {
   });
 
   test('field suggestions do not leak schema names', async ({ local }) => {
-    test.fail(true, 'Known gap: yoga returns "Did you mean" hints even with introspection off. Fix: a plugin that strips suggestions.');
     const res = await local.exec('{ boo { id } }');
-    expect(JSON.stringify(res.errors)).not.toMatch(/Did you mean/);
+    expectRequestError(res, { message: /Cannot query field "boo"/ });
+    expect(JSON.stringify(res.errors)).not.toMatch(/Did you mean|"book"/);
+  });
+
+  test('input field suggestions do not leak through variables', async ({ local }) => {
+    const res = await local.exec('mutation($i: AddBookInput!) { addBook(input: $i) { id } }', { i: { titel: 'x', authorId: 'a1' } });
+    expectRequestError(res, { message: /titel/ });
+    expect(JSON.stringify(res.errors)).not.toMatch(/Did you mean|"title"/);
   });
 });
 
